@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Ballan Thobes Distribution to Bonda Section</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- PIN SCREEN -->
+<div id="pinScreen">
+  <div class="pin-box">
+    <img src="logo.png" class="pin-logo">
+    <h2>Supervisor Access</h2>
+    <input id="pinInput" type="password" placeholder="Enter PIN">
+    <button onclick="unlock()">Unlock</button>
+  </div>
+</div>
+
+<!-- FIXED HEADER -->
+<header class="app-header">
+  <img src="logo.png" class="logo">
+  <div class="title">
+    <h1>Ballan Men's Tailoring </h1>
+    <p>Thobe Distribution System to "BONDA" Section</p>
+    <small>Developed by: <b>SACHIN PREM SANJAYA LUTHRASENA</b></small>
+  </div>
+</header>
+
+<main>
+
+  <!-- ADD EMPLOYEE -->
+  <div class="controls">
+    <input id="empNumber" placeholder="Employee No">
+    <input id="empName" placeholder="Employee Name">
+    <button onclick="addEmployee()">Add Employee</button>
+  </div>
+
+  <!-- ASSIGN BOX -->
+  <div class="controls">
+    <select id="empSelect"></select>
+    <input id="qtyInput" placeholder="Qty (e.g. 8J, 7N)">
+    <button onclick="assignBox()">Assign Box</button>
+  </div>
+
+  <!-- LEGEND -->
+  <div class="legend">
+    <span class="legend-j">■ J = Jacket Pocket </span>
+    <span class="legend-n">■ N = Nome Thobe </span>
+  </div>
+
+  <!-- EMPLOYEES -->
+  <div id="employeesRow" class="employees-row"></div>
+
+  <!-- SUMMARY -->
+  <div id="summary" class="summary"></div>
+
+  <!-- ACTIONS -->
+  <div class="controls">
+    <button type="button" onclick="exportCSV()">
+  Export CSV
+</button>
+    <button onclick="dailyReset()">Daily Reset</button>
+  </div>
+
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #f2f2f2;
+}
+
+/* HEADER */
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #111;
+  color: white;
+  display: flex;
+  gap: 12px;
+  padding: 10px;
+  z-index: 100;
+}
+
+.logo { height: 50px; }
+
+.title h1 { margin: 0; font-size: 18px; }
+.title p { margin: 0; font-size: 13px; color: #bbb; }
+.title small { font-size: 11px; color: #aaa; }
+
+main { padding: 90px 10px 10px; }
+
+/* CONTROLS */
+.controls {
+  display: flex;
+  gap: 6px;
+  margin-top:8px;
+  
+ 
+}
+
+input, select, button {
+  padding: 6px;
+  font-size: 14px;
+}
+
+button {
+  background: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+}
+
+/* EMPLOYEES */
+.employees-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.employee {
+  background: white;
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.2);
+}
+
+.employee.highlight {
+  border: 3px solid orange;
+}
+
+.emp-info {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.emp-no {
+  background: #1976d2;
+  color: rgb(0, 0, 0);
+  font-weight: bold;
+  padding: 4px 8px;
+  border-radius: 8px;
+  min-width: 50px;
+  text-align: center;
+}
+
+.emp-name {
+  font-weight: bold;
+  font-size: 16px;
+  color: #333;
+}
+
+.del-btn {
+  margin-left: auto;
+  background: #f44336;
+  border-radius: 6px;
+  padding: 2px 6px;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.boxes {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  overflow-x: auto;
+}
+
+.box {
+  padding: 6px;
+  border-radius: 6px;
+  min-width: 42px;
+  text-align: center;
+  position: relative;
+}
+
+.box small {
+  display: block;
+  font-size: 9px;
+}
+
+.box button {
+  position: absolute;
+  top: 1px;
+  right: -6px;
+  background: red;
+  font-size: 10px;
+  padding: 2px 4px;
+}
+
+/* BOX COLORS */
+.box.j { background: #00ff3c; color: rgb(0, 0, 0); }
+.box.n { background: #ffaa22; color: rgb(0, 0, 0); }
+.box.default { background: #e0e0e0; color: black; }
+
+/* STATS */
+.stats {
+  text-align: right;
+  font-size: 13px;
+  margin-top: 6px;
+}
+
+/* SUMMARY */
+.summary {
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+/* LEGEND */
+.legend {
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.legend-j { color: #2196f3; margin-right: 10px; }
+.legend-n { color: #ffaa22; }
+
+/* PIN SCREEN */
+#pinScreen {
+  position: fixed;
+  inset: 0;
+  background: url("pin-bg.jpg") center/cover no-repeat;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.pin-box {
+  background: rgba(0,0,0,0.7);
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  color: white;
+}
+
+.pin-logo {
+  height: 70px;
+  margin-bottom: 10px;
+   }
