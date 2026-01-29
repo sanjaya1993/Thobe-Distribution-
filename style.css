@@ -16,6 +16,7 @@ body {
   gap: 12px;
   padding: 10px;
   z-index: 100;
+  float: 50%;
 }
 
 .logo { height: 50px; }
