@@ -202,6 +202,11 @@ function dailyReset() {
   URL.revokeObjectURL(url);
 }
 
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/service-worker.js');
+}
+
+
 /* INIT */
 updateSelect();
 render();
