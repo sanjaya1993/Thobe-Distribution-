@@ -159,65 +159,46 @@ function dailyReset() {
 }
 
 /* CSV */
-function exportCSV() {
-  const pin = prompt("Supervisor PIN");
-  if (pin !== "1234") {
-    alert("Wrong PIN");
-    return;
-  }
 
-  if (!employees || employees.length === 0) {
+  function exportCSV() {
+  if (!employees.length) {
     alert("No data to export");
     return;
   }
 
-  let maxBoxes = 0;
-  employees.forEach(emp => {
-    if (emp.boxes.length > maxBoxes) maxBoxes = emp.boxes.length;
-  });
+  // CSV HEADER
+  let csv = "Employee Number,Employee Name,Quantities,Total Quantity,Box Count\n";
 
-  let csv = "Employee Name";
-  for (let i = 1; i <= maxBoxes; i++) {
-    csv += `,Box ${i}`;
-  }
-  csv += ",Total Quantity\n";
-
-  let grandQty = 0;
-  let grandBoxes = 0;
+  let grandTotalQty = 0;
+  let grandTotalBoxes = 0;
 
   employees.forEach(emp => {
-    let empTotal = 0;
-    csv += emp.name;
+    const quantities = emp.boxes.map(b => b.qty).join("|");
+    const totalQty = emp.boxes.reduce((s, b) => s + b.qty, 0);
+    const boxCount = emp.boxes.length;
 
-    emp.boxes.forEach(b => {
-      const num = parseInt(b.qty); // supports 8J, 7N
-      csv += `,${num}`;
-      empTotal += num;
-      grandBoxes++;
-    });
+    grandTotalQty += totalQty;
+    grandTotalBoxes += boxCount;
 
-    for (let i = emp.boxes.length; i < maxBoxes; i++) {
-      csv += ",";
-    }
-
-    csv += `,${empTotal}\n`;
-    grandQty += empTotal;
+    // FIXED: emp.no (NOT emp.number)
+    csv += `${emp.no},${emp.name},"${quantities}",${totalQty},${boxCount}\n`;
   });
 
-  csv += `Total Quantity${",".repeat(maxBoxes)},${grandQty}\n`;
-  csv += `Total Box Quantity${",".repeat(maxBoxes)},${grandBoxes}\n`;
+  // GRAND TOTALS
+  csv += `\nTotal Quantity,${grandTotalQty}\n`;
+  csv += `Total Boxes,${grandTotalBoxes}\n`;
 
-  // ✅ REAL FILE DOWNLOAD (WINDOWS SAFE)
+  // DOWNLOAD CSV
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
 
   const a = document.createElement("a");
   a.href = url;
-  a.download = "distribution_report.csv";
+  a.download = `distribution_${new Date().toISOString().slice(0,10)}.csv`;
   document.body.appendChild(a);
   a.click();
-
   document.body.removeChild(a);
+
   URL.revokeObjectURL(url);
 }
 

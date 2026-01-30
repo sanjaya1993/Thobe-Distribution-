@@ -24,48 +24,56 @@
   <div class="title">
     <h1>Ballan Men's Tailoring </h1>
     <p>Thobe Distribution System to "BONDA" Section</p>
-    <small>Developed by: <b>SACHIN PREM SANJAYA LUTHRASENA</b></small>
-  </div>
+    </div>
 </header>
 
-<main>
-
-  <!-- ADD EMPLOYEE -->
+<!-- FIXED TOP BAR -->
+<div class="fixed-top">
+  
+  <!-- Employee Add -->
   <div class="controls">
     <input id="empNumber" placeholder="Employee No">
     <input id="empName" placeholder="Employee Name">
     <button onclick="addEmployee()">Add Employee</button>
   </div>
 
-  <!-- ASSIGN BOX -->
+  <!-- Assign Box -->
   <div class="controls">
     <select id="empSelect"></select>
     <input id="qtyInput" placeholder="Qty (e.g. 8J, 7N)">
     <button onclick="assignBox()">Assign Box</button>
   </div>
 
-  <!-- LEGEND -->
+  <!-- Legend -->
   <div class="legend">
     <span class="legend-j">■ J = Jacket Pocket </span>
     <span class="legend-n">■ N = Nome Thobe </span>
   </div>
 
-  <!-- EMPLOYEES -->
-  <div id="employeesRow" class="employees-row"></div>
+</div>
 
-  <!-- SUMMARY -->
+
+<!-- FIXED TOP-RIGHT PANEL -->
+<div class="top-right-panel">
   <div id="summary" class="summary"></div>
 
-  <!-- ACTIONS -->
-  <div class="controls">
-    <button type="button" onclick="exportCSV()">
-  Export CSV
-</button>
-    <button onclick="dailyReset()">Daily Reset</button>
-  </div>
+  <button class="action-btn" onclick="exportCSV()">Export CSV</button>
+  <button class="action-btn reset" onclick="dailyReset()">Daily Reset</button>
+</div>
+
+<main>
+
+ 
+<!-- EMPLOYEE LIST (scrollable) -->
+<div id="employeesRow" class="employees-row"></div>
+
+ 
 
 </main>
 
 <script src="app.js"></script>
+
+<footer> Develop By : Sachin Prem Sanjaya Luthrasena  &copy 2026  </footer>
+
 </body>
 </html>
