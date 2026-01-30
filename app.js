@@ -1,111 +1,164 @@
+/* CONFIG */
 const SUPERVISOR_PIN = "";
+
+/* DATA */
 let employees = JSON.parse(localStorage.getItem("employees") || "[]");
 
-/* SAVE */
+/* HELPERS */
 function save() {
   localStorage.setItem("employees", JSON.stringify(employees));
 }
 
-/* PIN */
-function unlock() {
-  if (pinInput.value === SUPERVISOR_PIN) {
-    pinScreen.style.display = "none";
-  } else alert("Wrong PIN");
+function nowTime() {
+  return new Date().toLocaleTimeString();
 }
 
 function askPin() {
   return prompt("Supervisor PIN") === SUPERVISOR_PIN;
 }
 
-/* TIME */
-function nowTime() {
-  return new Date().toLocaleTimeString();
+/* PIN SCREEN */
+function unlock() {
+  if (pinInput.value === SUPERVISOR_PIN) {
+    pinScreen.style.display = "none";
+  } else {
+    alert("Wrong PIN");
+  }
 }
 
-/* EMPLOYEE */
+/* PARSE BOX INPUT — supports: 1, 1J, 1N */
+function parseBoxInput(input) {
+  const trimmed = input.trim().toUpperCase();
+
+  // Case 1: Only number
+  if (/^\d+$/.test(trimmed)) {
+    return {
+      qty: parseInt(trimmed),
+      type: "",
+      label: trimmed,
+      time: nowTime()
+    };
+  }
+
+  // Case 2: Number + letter (J/N)
+  const match = trimmed.match(/^(\d+)([A-Z])$/);
+  if (match) {
+    return {
+      qty: parseInt(match[1]),
+      type: match[2],
+      label: `${match[1]}${match[2]}`,
+      time: nowTime()
+    };
+  }
+
+  return null;
+}
+
+/* EMPLOYEES */
 function addEmployee() {
   const no = empNumber.value.trim();
   const name = empName.value.trim();
+
   if (!no || !name) return;
-  if (employees.some(e => e.no === no)) return alert("Exists");
+  if (employees.some(e => e.no === no)) return alert("Employee already exists");
 
   employees.push({ no, name, boxes: [] });
-  empNumber.value = empName.value = "";
-  save(); updateSelect(); render();
+
+  empNumber.value = "";
+  empName.value = "";
+
+  save();
+  updateSelect();
+  render();
 }
 
-function deleteEmployee(i) {
+function deleteEmployee(index) {
   if (!askPin()) return;
-  employees.splice(i, 1);
-  save(); updateSelect(); render();
+  employees.splice(index, 1);
+  save();
+  updateSelect();
+  render();
 }
 
-/* BOX */
+/* BOXES */
 function assignBox() {
-  const i = empSelect.value;
-  const input = qtyInput.value.trim();
-  if (i === "" || !input) return;
+  const empIndex = empSelect.value;
+  const raw = qtyInput.value.trim();
 
-  const match = input.match(/\d+/);
-  if (!match) return alert("Must contain number");
+  if (empIndex === "") return alert("Select employee");
 
-  employees[i].boxes.push({
-    label: input,
-    qty: Number(match[0]),
-    time: nowTime()
-  });
+  const parsed = parseBoxInput(raw);
+  if (!parsed) {
+    alert("Invalid format. Use: 1 or 1J or 1N");
+    return;
+  }
+
+  employees[empIndex].boxes.push(parsed);
 
   qtyInput.value = "";
-  save(); render();
+  save();
+  render();
 }
 
-function editBox(ei, bi) {
-  const cur = employees[ei].boxes[bi].label;
-  const input = prompt("Edit", cur);
+function editBox(empIndex, boxIndex) {
+  const current = employees[empIndex].boxes[boxIndex].label;
+  const input = prompt("Edit box", current);
   if (!input) return;
 
-  const match = input.match(/\d+/);
-  if (!match) return alert("Must contain number");
+  const parsed = parseBoxInput(input);
+  if (!parsed) return alert("Invalid format. Use: 1 or 1J or 1N");
 
-  employees[ei].boxes[bi].label = input;
-  employees[ei].boxes[bi].qty = Number(match[0]);
-  save(); render();
+  employees[empIndex].boxes[boxIndex] = parsed;
+
+  save();
+  render();
 }
 
-function deleteBox(ei, bi) {
+function deleteBox(empIndex, boxIndex) {
   if (!askPin()) return;
-  employees[ei].boxes.splice(bi, 1);
-  save(); render();
+  employees[empIndex].boxes.splice(boxIndex, 1);
+  save();
+  render();
 }
 
-/* CALC */
-function nextEmployeeIndex() {
-  let min = Infinity, idx = -1;
-  employees.forEach((e,i)=>{
-    const t = e.boxes.reduce((s,b)=>s+b.qty,0);
-    if (t < min) { min = t; idx = i; }
-  });
-  return idx;
-}
-
+/* CALCULATIONS */
 function totals() {
-  let totalQty = 0, totalBoxes = 0;
-  employees.forEach(e=>{
+  let totalQty = 0;
+  let totalBoxes = 0;
+
+  employees.forEach(e => {
     totalBoxes += e.boxes.length;
-    totalQty += e.boxes.reduce((s,b)=>s+b.qty,0);
+    totalQty += e.boxes.reduce((sum, b) => sum + b.qty, 0);
   });
+
   return { totalQty, totalBoxes };
 }
 
-/* RENDER */
+function nextEmployeeIndex() {
+  let min = Infinity;
+  let idx = -1;
+
+  employees.forEach((e, i) => {
+    const t = e.boxes.reduce((s, b) => s + b.qty, 0);
+    if (t < min) {
+      min = t;
+      idx = i;
+    }
+  });
+
+  return idx;
+}
+
+/* RENDER UI */
 function render() {
   employeesRow.innerHTML = "";
   const next = nextEmployeeIndex();
 
-  employees.forEach((e,i)=>{
-    const total = e.boxes.reduce((s,b)=>s+b.qty,0);
+  employees.forEach((e, i) => {
+    const total = e.boxes.reduce((s, b) => s + b.qty, 0);
+
     const div = document.createElement("div");
-    div.className = "employee" + (i===next?" highlight":"");
+    div.className = "employee" + (i === next ? " highlight" : "");
 
     div.innerHTML = `
       <div class="emp-info">
@@ -115,20 +168,19 @@ function render() {
       </div>
 
       <div class="boxes">
-        ${e.boxes.map((b,bi)=>{
-          const letter = b.label.replace(/[0-9]/g,"").toUpperCase();
-          let cls = "default";
-          if (letter==="J") cls="j";
-          else if (letter==="N") cls="n";
+        ${e.boxes
+          .map((b, bi) => {
+            const cls = b.type === "J" ? "j" : b.type === "N" ? "n" : "default";
 
-          return `
-            <div class="box ${cls}" onclick="editBox(${i},${bi})">
-              ${b.label}
-              <small>${b.time}</small>
-              <button onclick="event.stopPropagation();deleteBox(${i},${bi})">×</button>
-            </div>
-          `;
-        }).join("")}
+            return `
+              <div class="box ${cls}" onclick="editBox(${i},${bi})">
+                ${b.label}
+                <small>${b.time}</small>
+                <button onclick="event.stopPropagation();deleteBox(${i},${bi})">×</button>
+              </div>
+            `;
+          })
+          .join("")}
       </div>
 
       <div class="stats">
@@ -136,6 +188,7 @@ function render() {
         Total: ${total}
       </div>
     `;
+
     employeesRow.appendChild(div);
   });
 
@@ -143,10 +196,10 @@ function render() {
   summary.innerHTML = `Total Boxes: ${t.totalBoxes}<br>Total Quantity: ${t.totalQty}`;
 }
 
-/* SELECT */
+/* SELECT DROPDOWN */
 function updateSelect() {
   empSelect.innerHTML = `<option value="">Select</option>`;
-  employees.forEach((e,i)=>{
+  employees.forEach((e, i) => {
     empSelect.innerHTML += `<option value="${i}">#${e.no} → ${e.name}</option>`;
   });
 }
@@ -154,58 +207,72 @@ function updateSelect() {
 /* RESET */
 function dailyReset() {
   if (!askPin()) return;
-  employees.forEach(e=>e.boxes=[]);
-  save(); render();
+  employees.forEach(e => (e.boxes = []));
+  save();
+  render();
 }
 
-/* CSV */
+/* CSV EXPORT */
+function exportCSV() {
+  if (!employees.length) return alert("No data to export");
 
-  function exportCSV() {
-  if (!employees.length) {
-    alert("No data to export");
-    return;
+  const max = Math.max(0, ...employees.map(e => e.boxes.length));
+
+  let csv = "Employee Number,Employee Name";
+
+  // Bold-friendly headers
+  for (let i = 1; i <= max; i++) {
+    csv += `,="B${i}"`;
   }
 
-  // CSV HEADER
-  let csv = "Employee Number,Employee Name,Quantities,Total Quantity,Box Count\n";
+  csv += ",Total Quantity,Box Count\n";
 
   let grandTotalQty = 0;
   let grandTotalBoxes = 0;
 
   employees.forEach(emp => {
-    const quantities = emp.boxes.map(b => b.qty).join("|");
-    const totalQty = emp.boxes.reduce((s, b) => s + b.qty, 0);
-    const boxCount = emp.boxes.length;
+    const boxes = emp.boxes;
+
+    const totalQty = boxes.reduce((s, b) => s + b.qty, 0);
+    const boxCount = boxes.length;
 
     grandTotalQty += totalQty;
     grandTotalBoxes += boxCount;
 
-    // FIXED: emp.no (NOT emp.number)
-    csv += `${emp.no},${emp.name},"${quantities}",${totalQty},${boxCount}\n`;
+    csv += `${emp.no},${emp.name}`;
+
+    boxes.forEach(b => {
+      csv += `,${b.label}`;
+    });
+
+    for (let i = boxes.length; i < max; i++) {
+      csv += ",";
+    }
+
+    csv += `,${totalQty},${boxCount}\n`;
   });
 
-  // GRAND TOTALS
   csv += `\nTotal Quantity,${grandTotalQty}\n`;
   csv += `Total Boxes,${grandTotalBoxes}\n`;
 
-  // DOWNLOAD CSV
+  const d = new Date();
+  const pad = n => String(n).padStart(2, "0");
+  const timestamp =
+    `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_` +
+    `${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
+
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
 
   const a = document.createElement("a");
   a.href = url;
-  a.download = `distribution_${new Date().toISOString().slice(0,10)}.csv`;
+  a.download = `distribution_${timestamp}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
 
   URL.revokeObjectURL(url);
 }
-
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/service-worker.js');
-}
-
 
 /* INIT */
 updateSelect();
