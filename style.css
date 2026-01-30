@@ -252,3 +252,6 @@ footer{
     left: 0;
     bottom: 0;
 }
+input, select, textarea {
+  font-size: 16px;
+}
