@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Box Distribution Analysis</title>
+  <title>Thobe Distribution Analysis</title>
 
   <style>
     body {
@@ -17,11 +17,11 @@
 
     .top-bar {
       display: flex;
-      justify-content: flex-start;
+      justify-content: space-between;
       align-items: center;
-      gap: 10px;
       margin-bottom: 14px;
       font-size: 14px;
+      gap: 10px;
     }
 
     .top-bar button {
@@ -68,6 +68,7 @@
       background: #fafafa;
     }
 
+    /* Highlight top 3 priority rows */
     tbody tr:nth-child(1),
     tbody tr:nth-child(2),
     tbody tr:nth-child(3) {
@@ -83,11 +84,10 @@
 </head>
 <body>
 
-  <h1>Box Distribution Analysis</h1>
+  <h1>Thobe Distribution Analysis</h1>
 
   <div class="top-bar">
     <button onclick="renderAnalyze()">Refresh</button>
-    <button onclick="resetAnalysis()">Reset</button>
     <span id="updated"></span>
   </div>
 
@@ -98,7 +98,7 @@
         <th>Name</th>
         <th>Total Qty</th>
         <th>Last Assign</th>
-        <th>Waiting</th>
+        <th>Waiting (HH:MM hrs)</th>
       </tr>
     </thead>
     <tbody id="analyzeBody"></tbody>
@@ -107,6 +107,7 @@
   <div id="emptyMessage" class="empty-msg"></div>
 
   <script>
+    // Load employees from localStorage
     function loadEmployees() {
       try {
         const raw = localStorage.getItem("employees");
@@ -118,6 +119,7 @@
       }
     }
 
+    // Parse time like "10:43:12 PM" as today
     function parseTodayTime(timeStr) {
       if (!timeStr) return null;
       const today = new Date();
@@ -125,12 +127,14 @@
       return isNaN(d.getTime()) ? null : d;
     }
 
+    // Convert minutes → "HH:MM hrs"
     function formatHHMM(minutes) {
       const h = Math.floor(minutes / 60);
       const m = minutes % 60;
       return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")} hrs`;
     }
 
+    // Waiting minutes from last box to now
     function getWaitingMinutes(emp) {
       if (!emp.boxes || emp.boxes.length === 0) return 9999;
 
@@ -143,6 +147,7 @@
       return diffMin < 0 ? 0 : diffMin;
     }
 
+    // Build and sort analysis data
     function buildAnalyzeData() {
       const employees = loadEmployees();
 
@@ -161,6 +166,7 @@
         };
       });
 
+      // Sort: 1) less qty first, 2) if same qty → more waiting first
       list.sort((a, b) => {
         if (a.totalQty !== b.totalQty) return a.totalQty - b.totalQty;
         return b.waiting - a.waiting;
@@ -169,6 +175,7 @@
       return list;
     }
 
+    // Render table
     function renderAnalyze() {
       const tbody = document.getElementById("analyzeBody");
       const emptyMsg = document.getElementById("emptyMessage");
@@ -178,7 +185,7 @@
       const data = buildAnalyzeData();
 
       if (!data.length) {
-        emptyMsg.textContent = "No employees found in localStorage.";
+        emptyMsg.textContent = 'No employees found in localStorage (key: "employees").';
       }
 
       data.forEach(row => {
@@ -200,14 +207,7 @@
         now.getMinutes().toString().padStart(2, "0");
     }
 
-    function resetAnalysis() {
-      const employees = loadEmployees();
-      employees.forEach(emp => emp.boxes = []);
-      localStorage.setItem("employees", JSON.stringify(employees));
-      renderAnalyze();
-      alert("All box data reset successfully.");
-    }
-
+    // Initial render
     renderAnalyze();
   </script>
 

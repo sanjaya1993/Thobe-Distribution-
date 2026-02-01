@@ -81,6 +81,7 @@ function deleteEmployee(index) {
 }
 
 /* BOXES */
+
 function assignBox() {
   const empIndex = empSelect.value;
   const raw = qtyInput.value.trim();
@@ -92,6 +93,8 @@ function assignBox() {
     alert("Invalid format. Use: 1 or 1J or 1N");
     return;
   }
+
+ 
 
   employees[empIndex].boxes.push(parsed);
 
@@ -120,6 +123,8 @@ function deleteBox(empIndex, boxIndex) {
   save();
   render();
 }
+
+
 
 /* CALCULATIONS */
 function totals() {
@@ -273,7 +278,30 @@ function exportCSV() {
 
   URL.revokeObjectURL(url);
 }
+function exportAnalysisJSON() {
+  const data = {
+    exportedAt: new Date().toISOString(),
+    employees: employees.map(emp => ({
+      number: emp.number,
+      name: emp.name,
+      boxes: emp.boxes.map(b => ({
+        qty: b.qty,
+        time: b.time
+      }))
+    }))
+  };
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], {
+    type: "application/json"
+  });
+
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "distribution-analysis-data.json";
+  a.click();
+}
 
 /* INIT */
 updateSelect();
 render();
+
