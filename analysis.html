@@ -1,215 +1,202 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Thobe Distribution Analysis</title>
+<meta charset="UTF-8">
+<title>Production Analysis</title>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #f5f5f5;
-    }
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f8;
+    padding: 20px;
+  }
 
-    h1 {
-      margin-bottom: 10px;
-    }
+  h2 {
+    margin-bottom: 10px;
+  }
 
-    .top-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 14px;
-      font-size: 14px;
-      gap: 10px;
-    }
+  .top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 14px;
+  }
 
-    .top-bar button {
-      padding: 6px 12px;
-      border: none;
-      border-radius: 4px;
-      background: #0078d4;
-      color: #fff;
-      cursor: pointer;
-      font-size: 13px;
-    }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    table-layout: fixed; /* 🔹 KEY for alignment */
+  }
 
-    .top-bar button:hover {
-      background: #005fa3;
-    }
+  th, td {
+    padding: 8px 6px;
+    border-bottom: 1px solid #ddd;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
-    #updated {
-      margin-left: auto;
-      font-size: 13px;
-      color: #444;
-    }
+  th {
+    background: #f0f0f0;
+    font-weight: 600;
+  }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #ffffff;
-      border-radius: 6px;
-      overflow: hidden;
-    }
+  /* 🔹 Column widths + alignment */
+  th:nth-child(1), td:nth-child(1) { width: 10%; text-align: center; }
+  th:nth-child(2), td:nth-child(2) { width: 25%; text-align: left; }
+  th:nth-child(3), td:nth-child(3) { width: 12%; text-align: center; }
+  th:nth-child(4), td:nth-child(4) { width: 12%; text-align: center; }
+  th:nth-child(5), td:nth-child(5) { width: 18%; text-align: center; }
+  th:nth-child(6), td:nth-child(6) { width: 23%; text-align: center; }
 
-    th, td {
-      padding: 8px;
-      border-bottom: 1px solid #e0e0e0;
-      text-align: left;
-      font-size: 13px;
-    }
+  tr:nth-child(even) {
+    background: #fafafa;
+  }
 
-    th {
-      background: #f0f0f0;
-      font-weight: 600;
-    }
+  .empty-msg {
+    margin-top: 10px;
+    font-size: 13px;
+    color: #666;
+  }
 
-    tr:nth-child(even) {
-      background: #fafafa;
-    }
+  button {
+    padding: 5px 10px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+</style>
 
-    /* Highlight top 3 priority rows */
-    tbody tr:nth-child(1),
-    tbody tr:nth-child(2),
-    tbody tr:nth-child(3) {
-      background: #fff7d6;
-    }
-
-    .empty-msg {
-      margin-top: 10px;
-      font-size: 13px;
-      color: #666;
-    }
-  </style>
 </head>
+
 <body>
 
-  <h1>Thobe Distribution Analysis</h1>
+<h2>Production Analysis</h2>
 
-  <div class="top-bar">
-    <button onclick="renderAnalyze()">Refresh</button>
-    <span id="updated"></span>
-  </div>
+<div class="top-bar">
+  <button onclick="renderAnalyze()">Refresh</button>
+  <span id="updated"></span>
+</div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Emp No</th>
-        <th>Name</th>
-        <th>Total Qty</th>
-        <th>Last Assign</th>
-        <th>Waiting (HH:MM hrs)</th>
-      </tr>
-    </thead>
-    <tbody id="analyzeBody"></tbody>
-  </table>
+<table>
+  <thead>
+    <tr>
+      <th>Emp No</th>
+      <th>Name</th>
+      <th>Total Qty</th>
+      <th>Box Count</th>
+      <th>Avg Time / Box (HH:MM)</th>
+      <th>Last Assign</th>
+    </tr>
+  </thead>
+  <tbody id="analyzeBody"></tbody>
+</table>
 
-  <div id="emptyMessage" class="empty-msg"></div>
+<div id="emptyMessage" class="empty-msg"></div>
 
-  <script>
-    // Load employees from localStorage
-    function loadEmployees() {
-      try {
-        const raw = localStorage.getItem("employees");
-        if (!raw) return [];
-        const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) ? parsed : [];
-      } catch {
-        return [];
-      }
+<script>
+function loadEmployees() {
+  try {
+    const raw = localStorage.getItem("employees");
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function parseTodayTime(timeStr) {
+  if (!timeStr) return null;
+  const today = new Date();
+  const d = new Date(today.toDateString() + " " + timeStr);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function formatHHMM(min) {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+}
+
+// Calculate average production time per box
+function calcAvgProductionTime(boxes) {
+  if (!boxes || boxes.length < 2) return 0;
+
+  let totalMin = 0;
+  let count = 0;
+
+  for (let i = 1; i < boxes.length; i++) {
+    const prev = parseTodayTime(boxes[i - 1].time);
+    const curr = parseTodayTime(boxes[i].time);
+
+    if (!prev || !curr) continue;
+
+    const diffMin = Math.floor((curr - prev) / 60000);
+    if (diffMin > 0) {
+      totalMin += diffMin;
+      count++;
     }
+  }
 
-    // Parse time like "10:43:12 PM" as today
-    function parseTodayTime(timeStr) {
-      if (!timeStr) return null;
-      const today = new Date();
-      const d = new Date(today.toDateString() + " " + timeStr);
-      return isNaN(d.getTime()) ? null : d;
-    }
+  return count ? Math.round(totalMin / count) : 0;
+}
 
-    // Convert minutes → "HH:MM hrs"
-    function formatHHMM(minutes) {
-      const h = Math.floor(minutes / 60);
-      const m = minutes % 60;
-      return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")} hrs`;
-    }
+function buildAnalyzeData() {
+  const employees = loadEmployees();
 
-    // Waiting minutes from last box to now
-    function getWaitingMinutes(emp) {
-      if (!emp.boxes || emp.boxes.length === 0) return 9999;
+  return employees.map(emp => {
+    const boxes = Array.isArray(emp.boxes) ? emp.boxes : [];
+    return {
+      no: emp.no || "",
+      name: emp.name || "",
+      totalQty: boxes.reduce((s,b)=>s+(b.qty||0),0),
+      boxCount: boxes.length,
+      avgTime: calcAvgProductionTime(boxes),
+      lastTime: boxes.length ? boxes[boxes.length - 1].time : "-"
+    };
+  });
+}
 
-      const last = emp.boxes[emp.boxes.length - 1];
-      const lastDate = parseTodayTime(last.time);
-      if (!lastDate) return 0;
+function renderAnalyze() {
+  const tbody = document.getElementById("analyzeBody");
+  const emptyMsg = document.getElementById("emptyMessage");
+  const updated = document.getElementById("updated");
 
-      const diffMs = Date.now() - lastDate.getTime();
-      const diffMin = Math.floor(diffMs / 60000);
-      return diffMin < 0 ? 0 : diffMin;
-    }
+  tbody.innerHTML = "";
+  emptyMsg.textContent = "";
 
-    // Build and sort analysis data
-    function buildAnalyzeData() {
-      const employees = loadEmployees();
+  const data = buildAnalyzeData();
 
-      const list = employees.map(emp => {
-        const boxes = Array.isArray(emp.boxes) ? emp.boxes : [];
-        const totalQty = boxes.reduce((s, b) => s + (b.qty || 0), 0);
-        const waiting = getWaitingMinutes(emp);
-        const lastTime = boxes.length ? boxes[boxes.length - 1].time : "-";
+  if (!data.length) {
+    emptyMsg.textContent = "No employees found in localStorage.";
+    return;
+  }
 
-        return {
-          no: emp.no || "",
-          name: emp.name || "",
-          totalQty,
-          waiting,
-          lastTime
-        };
-      });
+  data.forEach(r => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${r.no}</td>
+      <td>${r.name}</td>
+      <td>${r.totalQty}</td>
+      <td>${r.boxCount}</td>
+      <td>${formatHHMM(r.avgTime)}</td>
+      <td>${r.lastTime}</td>
+    `;
+    tbody.appendChild(tr);
+  });
 
-      // Sort: 1) less qty first, 2) if same qty → more waiting first
-      list.sort((a, b) => {
-        if (a.totalQty !== b.totalQty) return a.totalQty - b.totalQty;
-        return b.waiting - a.waiting;
-      });
+  const now = new Date();
+  updated.textContent =
+    "Updated at " +
+    now.getHours().toString().padStart(2,"0") + ":" +
+    now.getMinutes().toString().padStart(2,"0");
+}
 
-      return list;
-    }
-
-    // Render table
-    function renderAnalyze() {
-      const tbody = document.getElementById("analyzeBody");
-      const emptyMsg = document.getElementById("emptyMessage");
-      tbody.innerHTML = "";
-      emptyMsg.textContent = "";
-
-      const data = buildAnalyzeData();
-
-      if (!data.length) {
-        emptyMsg.textContent = 'No employees found in localStorage (key: "employees").';
-      }
-
-      data.forEach(row => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${row.no}</td>
-          <td>${row.name}</td>
-          <td>${row.totalQty}</td>
-          <td>${row.lastTime}</td>
-          <td>${formatHHMM(row.waiting)}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      const now = new Date();
-      document.getElementById("updated").textContent =
-        "Updated at " +
-        now.getHours().toString().padStart(2, "0") + ":" +
-        now.getMinutes().toString().padStart(2, "0");
-    }
-
-    // Initial render
-    renderAnalyze();
-  </script>
+renderAnalyze();
+</script>
 
 </body>
 </html>

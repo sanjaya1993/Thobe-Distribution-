@@ -1,10 +1,12 @@
-/* CONFIG */
+/* ================= CONFIG ================= */
 const SUPERVISOR_PIN = "";
 
-/* DATA */
+/* ================= DATA ================= */
 let employees = JSON.parse(localStorage.getItem("employees") || "[]");
 
-/* HELPERS */
+/* ================= HELPERS ================= */
+
+
 function save() {
   localStorage.setItem("employees", JSON.stringify(employees));
 }
@@ -17,7 +19,22 @@ function askPin() {
   return prompt("Supervisor PIN") === SUPERVISOR_PIN;
 }
 
-/* PIN SCREEN */
+function formatDuration(ms) {
+  const sec = Math.floor(ms / 1000);
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  return `${h.toString().padStart(2,"0")}:` +
+         `${m.toString().padStart(2,"0")}:` +
+         `${s.toString().padStart(2,"0")}`;
+}
+
+function getWaitingMs(emp) {
+  if (!emp.waitingFrom) return emp.totalWaitingMs;
+  return emp.totalWaitingMs + (Date.now() - emp.waitingFrom);
+}
+
+/* ================= PIN SCREEN ================= */
 function unlock() {
   if (pinInput.value === SUPERVISOR_PIN) {
     pinScreen.style.display = "none";
@@ -26,27 +43,21 @@ function unlock() {
   }
 }
 
-/* PARSE BOX INPUT — supports: 1, 1J, 1N */
+/* ================= PARSE BOX INPUT ================= */
 function parseBoxInput(input) {
   const trimmed = input.trim().toUpperCase();
 
-  // Case 1: Only number
   if (/^\d+$/.test(trimmed)) {
-    return {
-      qty: parseInt(trimmed),
-      type: "",
-      label: trimmed,
-      time: nowTime()
-    };
+    return { qty: parseInt(trimmed), type: "", label: trimmed, time: nowTime() };
   }
 
-  // Case 2: Number + letter (J/N)
   const match = trimmed.match(/^(\d+)([A-Z])$/);
   if (match) {
+    const type = match[2].toLowerCase(); // normalize to lowercase class
     return {
       qty: parseInt(match[1]),
-      type: match[2],
-      label: `${match[1]}${match[2]}`,
+      type: type,
+      label: match[1] + match[2],
       time: nowTime()
     };
   }
@@ -54,7 +65,7 @@ function parseBoxInput(input) {
   return null;
 }
 
-/* EMPLOYEES */
+/* ================= EMPLOYEES ================= */
 function addEmployee() {
   const no = empNumber.value.trim();
   const name = empName.value.trim();
@@ -62,7 +73,14 @@ function addEmployee() {
   if (!no || !name) return;
   if (employees.some(e => e.no === no)) return alert("Employee already exists");
 
-  employees.push({ no, name, boxes: [] });
+  employees.push({
+    no,
+    name,
+    boxes: [],
+    working: false,
+    waitingFrom: Date.now(),
+    totalWaitingMs: 0
+  });
 
   empNumber.value = "";
   empName.value = "";
@@ -80,39 +98,56 @@ function deleteEmployee(index) {
   render();
 }
 
-/* BOXES */
-
+/* ================= ASSIGN BOX ================= */
 function assignBox() {
   const empIndex = empSelect.value;
   const raw = qtyInput.value.trim();
 
   if (empIndex === "") return alert("Select employee");
+  
 
+  const emp = employees[empIndex];
   const parsed = parseBoxInput(raw);
-  if (!parsed) {
-    alert("Invalid format. Use: 1 or 1J or 1N");
-    return;
-  }
+  if (!parsed) return alert("Invalid format");
 
- 
 
-  employees[empIndex].boxes.push(parsed);
+
+
+  // ✅ RESET waiting when new box assigned
+  emp.waitingFrom = null;
+  emp.totalWaitingMs = 0;
+  emp.working = true;
+
+  emp.boxes.push(parsed);
 
   qtyInput.value = "";
   save();
   render();
 }
 
+/* ================= FINISHED → WAITING ================= */
+function setWaiting(index) {
+  const emp = employees[index];
+
+  if (!emp.working) return;
+
+  emp.working = false;
+  emp.waitingFrom = Date.now();
+
+  save();
+  render();
+}
+
+/* ================= BOX EDIT / DELETE ================= */
 function editBox(empIndex, boxIndex) {
   const current = employees[empIndex].boxes[boxIndex].label;
   const input = prompt("Edit box", current);
   if (!input) return;
 
   const parsed = parseBoxInput(input);
-  if (!parsed) return alert("Invalid format. Use: 1 or 1J or 1N");
+  if (!parsed) return alert("Invalid format");
 
   employees[empIndex].boxes[boxIndex] = parsed;
-
   save();
   render();
 }
@@ -124,73 +159,61 @@ function deleteBox(empIndex, boxIndex) {
   render();
 }
 
-
-
-/* CALCULATIONS */
+/* ================= TOTALS ================= */
 function totals() {
   let totalQty = 0;
   let totalBoxes = 0;
 
   employees.forEach(e => {
     totalBoxes += e.boxes.length;
-    totalQty += e.boxes.reduce((sum, b) => sum + b.qty, 0);
+    totalQty += e.boxes.reduce((s, b) => s + b.qty, 0);
   });
 
   return { totalQty, totalBoxes };
 }
 
-function nextEmployeeIndex() {
-  let min = Infinity;
-  let idx = -1;
-
-  employees.forEach((e, i) => {
-    const t = e.boxes.reduce((s, b) => s + b.qty, 0);
-    if (t < min) {
-      min = t;
-      idx = i;
-    }
-  });
-
-  return idx;
-}
-
-/* RENDER UI */
+/* ================= RENDER ================= */
 function render() {
   employeesRow.innerHTML = "";
-  const next = nextEmployeeIndex();
 
   employees.forEach((e, i) => {
     const total = e.boxes.reduce((s, b) => s + b.qty, 0);
+    const waitingTime = formatDuration(getWaitingMs(e));
 
     const div = document.createElement("div");
-    div.className = "employee" + (i === next ? " highlight" : "");
+    div.className = "employee" + (!e.working ? " waiting" : "");
 
     div.innerHTML = `
       <div class="emp-info">
-        <div class="emp-no">#${e.no}</div>
-        <div class="emp-name">${e.name}</div>
-        <button onclick="deleteEmployee(${i})" class="del-btn">🗑</button>
+        <div class="emp-left">
+          <div class="emp-label">#${e.no} - ${e.name}</div>
+        </div>
+
+        <div class="emp-actions">
+          <button class="wait-btn"
+            onclick="setWaiting(${i})"
+            ${!e.working ? "disabled" : ""}>
+            ⏸ Finished
+          </button>
+
+          <button onclick="deleteEmployee(${i})" class="del-btn">🗑</button>
+        </div>
       </div>
 
       <div class="boxes">
-        ${e.boxes
-          .map((b, bi) => {
-            const cls = b.type === "J" ? "j" : b.type === "N" ? "n" : "default";
-
-            return `
-              <div class="box ${cls}" onclick="editBox(${i},${bi})">
-                ${b.label}
-                <small>${b.time}</small>
-                <button onclick="event.stopPropagation();deleteBox(${i},${bi})">×</button>
-              </div>
-            `;
-          })
-          .join("")}
+        ${e.boxes.map((b, bi) => `
+          <div class="box ${b.type || "default"}" onclick="editBox(${i},${bi})">
+            ${b.label}
+            <small>${b.time}</small>
+            <button onclick="event.stopPropagation();deleteBox(${i},${bi})">×</button>
+          </div>
+        `).join("")}
       </div>
 
       <div class="stats">
         Boxes: ${e.boxes.length}<br>
-        Total: ${total}
+        Total Qty: ${total}<br>
+        Waiting: ${waitingTime}
       </div>
     `;
 
@@ -198,10 +221,10 @@ function render() {
   });
 
   const t = totals();
-  summary.innerHTML = `Total Boxes: ${t.totalBoxes}<br>Total Quantity: ${t.totalQty}`;
+  summary.innerHTML =
+    `Total Boxes: ${t.totalBoxes}<br>Total Quantity: ${t.totalQty}`;
 }
-
-/* SELECT DROPDOWN */
+/* ================= SELECT ================= */
 function updateSelect() {
   empSelect.innerHTML = `<option value="">Select</option>`;
   employees.forEach((e, i) => {
@@ -209,10 +232,17 @@ function updateSelect() {
   });
 }
 
-/* RESET */
+/* ================= RESET ================= */
 function dailyReset() {
   if (!askPin()) return;
-  employees.forEach(e => (e.boxes = []));
+
+  employees.forEach(e => {
+    e.boxes = [];
+    e.working = false;
+    e.waitingFrom = Date.now();
+    e.totalWaitingMs = 0;
+  });
+
   save();
   render();
 }
@@ -301,7 +331,7 @@ function exportAnalysisJSON() {
   a.click();
 }
 
-/* INIT */
+/* ================= INIT ================= */
 updateSelect();
 render();
-
+setInterval(render, 1000);

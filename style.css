@@ -22,7 +22,7 @@ body {
 .logo { height: 60px; }
 
 .title h1 { margin: 0; font-size: 18px; 
-padding: 10px;
+padding: 1px;
 }
 .title p { margin: 0; font-size: 13px; color: #bbb; 
 padding: 1px;
@@ -30,7 +30,7 @@ padding: 1px;
 
 .title small { font-size: 11px; color: #aaa; }
 
-main { padding: 90px 10px 10px; }
+main { padding: 100px 10px 10px; }
 
 /* CONTROLS */
 .fixed-inputs {
@@ -267,3 +267,88 @@ input, select, textarea {
   font-size: 16px;
 }
 
+.wait-btn {
+  margin-right: 6px;
+  cursor: pointer;
+}
+
+.wait-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.emp-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.emp-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.emp-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.box { 
+  display:inline-block;
+  padding:8px 10px;
+  margin:6px;
+  border-radius:6px;
+  color:#111;
+  background:#eee; /* fallback */
+}
+
+/* default (numeric-only) */
+.box.default {
+  background: #f0f0f0;
+  color: #111;
+}
+
+/* type J */
+.box.j {
+  background: #caa201; /* pale red */
+  border: 1px solid #ff9a9a;
+}
+
+/* type N */
+.box.n {
+  background: #03ab81; /* pale blue */
+  border: 1px solid #9fd6ff;
+}
+
+/* add more types as needed */
+.box.a { background:#fff3cc; border:1px solid #ffd66b; }
+.box.b { background:#e8ffe6; border:1px solid #9fe79f; }
+.emp-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.emp-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.emp-label {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #111;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Optional: slightly smaller subtitle look if you want */
+.emp-label small {
+  display: inline-block;
+  margin-left: 6px;
+  font-weight: 400;
+  color: #666;
+  font-size: 0.85rem;
+}
